@@ -1,0 +1,269 @@
+package com.sevencrayons.compass;
+
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.PowerManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.RotateAnimation;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import static android.view.View.INVISIBLE;
+
+
+public class CompassActivity extends AppCompatActivity {
+    private static final String TAG = "CompassActivity";
+    private Compass compass;
+   // private ImageView arrowView;
+    private ImageView arrowViewQiblat;
+    private ImageView imageDial;
+    private TextView text_atas;
+    private TextView text_bawah;
+    private float currentAzimuth;
+    SharedPreferences prefs;
+    public LocationManager locationManager;
+    GPSTracker gps;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_compass);
+        //////////////////////////////////////////
+
+        prefs = getSharedPreferences("", MODE_PRIVATE);
+        gps = new GPSTracker(this);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        //////////////////////////////////////////
+        arrowViewQiblat = (ImageView) findViewById(R.id.main_image_qiblat);
+        imageDial = (ImageView) findViewById(R.id.main_image_dial);
+        text_atas = (TextView) findViewById(R.id.teks_atas);
+        text_bawah = (TextView) findViewById(R.id.teks_bawah);
+
+        //////////////////////////////////////////
+
+        setupCompass();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "start compass");
+        compass.start();
+        //alwaysOn(1);
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        compass.stop();
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        compass.start();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG, "stop compass");
+        compass.stop();
+
+
+
+    }
+
+    private void setupCompass() {
+        getBearing();
+        compass = new Compass(this);
+        Compass.CompassListener cl = new Compass.CompassListener() {
+
+            @Override
+            public void onNewAzimuth(float azimuth) {
+               // adjustArrow(azimuth);
+                adjustGambarDial(azimuth);
+                adjustArrowQiblat(azimuth);
+            }
+        };
+        compass.setListener(cl);
+    }
+
+
+    public void adjustGambarDial(float azimuth) {
+       // Log.d(TAG, "will set rotation from " + currentAzimuth + " to "                + azimuth);
+
+        Animation an = new RotateAnimation(-currentAzimuth, -azimuth,
+                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
+                0.5f);
+        currentAzimuth = (azimuth);
+        an.setDuration(500);
+        an.setRepeatCount(0);
+        an.setFillAfter(true);
+        imageDial.startAnimation(an);
+    }
+    public void adjustArrowQiblat(float azimuth) {
+        //Log.d(TAG, "will set rotation from " + currentAzimuth + " to "                + azimuth);
+
+        float kiblat_derajat = GetFloat("kiblat_derajat");
+        Animation an = new RotateAnimation(-(currentAzimuth)+kiblat_derajat, -azimuth,
+                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
+                0.5f);
+       currentAzimuth = (azimuth);
+        an.setDuration(500);
+        an.setRepeatCount(0);
+        an.setFillAfter(true);
+        arrowViewQiblat.startAnimation(an);
+    }
+
+    @SuppressLint("MissingPermission")
+    public void getBearing(){
+        double result = 0;
+        // Get the location manager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    1);
+        }
+        float kiblat_derajat = GetFloat("kiblat_derajat");
+        if(kiblat_derajat > 0.0001){
+            text_bawah.setText("Lokasi anda: menggunakan lokasi terakhir ");
+            text_atas.setText("Arah Ka'bah: " + kiblat_derajat + " derajat dari utara");
+
+        }else
+        if(gps.canGetLocation()){
+            double latitude = gps.getLatitude();
+            double longitude = gps.getLongitude();
+            // \n is for new line
+            text_bawah.setText("Lokasi anda: \nLatitude: " + latitude + " Longitude: " + longitude);
+           // Toast.makeText(getApplicationContext(), "Lokasi anda: - \nLat: " + latitude + "\nLong: " + longitude, Toast.LENGTH_LONG).show();
+            Log.e("TAG", "GPS is on");
+            double lat_saya = gps.getLatitude ();
+            double lon_saya = gps.getLongitude ();
+
+            if(lat_saya < 0.001 && lon_saya < 0.001) {
+                // arrowViewQiblat.isShown(false);
+                arrowViewQiblat .setVisibility(INVISIBLE);
+                arrowViewQiblat .setVisibility(View.GONE);
+                text_atas.setText("Location not ready, Please Restart Application");
+                text_bawah.setText("Location not ready, Please Restart Application");
+               // Toast.makeText(getApplicationContext(), "Location not ready, Please Restart Application", Toast.LENGTH_LONG).show();
+            }else{
+                double longitude2 = 39.826206;
+                double longitude1 = lon_saya;
+                double latitude2 = Math.toRadians(21.422487);
+                double latitude1 = Math.toRadians(lat_saya);
+
+
+                double longDiff= Math.toRadians(longitude2-longitude1);
+                double y= Math.sin(longDiff)*Math.cos(latitude2);
+                double x=Math.cos(latitude1)*Math.sin(latitude2)-Math.sin(latitude1)*Math.cos(latitude2)*Math.cos(longDiff);
+                result = (Math.toDegrees(Math.atan2(y, x))+360)%360;
+                float result2 = (float)result;
+                SaveFloat("kiblat_derajat", result2);
+                text_atas.setText("Arah Ka'bah: " + result2 + " derajat dari utara");
+
+                Toast.makeText(getApplicationContext(), "Arah Ka'bah: " + result2 + " derajat dari utara", Toast.LENGTH_LONG).show();
+            }
+
+            //  Toast.makeText(getApplicationContext(), "lat_saya: "+lat_saya + "\nlon_saya: "+lon_saya, Toast.LENGTH_LONG).show();
+
+        }else{
+            // can't get location
+            // GPS or Network is not enabled
+            // Ask user to enable GPS/network in settings
+            gps.showSettingsAlert();
+                // arrowViewQiblat.isShown(false);
+                arrowViewQiblat .setVisibility(INVISIBLE);
+             arrowViewQiblat .setVisibility(View.GONE);
+            text_atas.setText("Please enable Location first and Restart Application");
+            text_bawah.setText("Please enable Location first and Restart Application");
+
+           // Toast.makeText(getApplicationContext(), "Please enable Location first and Restart Application", Toast.LENGTH_LONG).show();
+        }
+
+
+    }
+
+
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // permission was granted, yay! Do the
+                } else {
+
+                    Toast.makeText(getApplicationContext(), "This app requires Access Location", Toast.LENGTH_LONG).show();
+                    finish();
+                }
+                return;
+            }
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
+
+
+    public  void SaveString(String Judul, String tex){
+        SharedPreferences.Editor edit = prefs.edit();
+        edit.putString(Judul, tex);
+        edit.apply();
+    }
+    public String GetString(String Judul){
+        String Stringxxx = prefs.getString(Judul, "");
+        return Stringxxx;
+    }
+
+    public  void SaveBoolean(String Judul, Boolean bbb){
+        SharedPreferences.Editor edit = prefs.edit();
+        edit.putBoolean(Judul, bbb);
+        edit.apply();
+    }
+
+    public  void Savelong(String Judul, Long bbb){
+        SharedPreferences.Editor edit = prefs.edit();
+        edit.putLong(Judul, bbb);
+        edit.apply();
+    }
+    public Long Getlong(String Judul){
+        Long xxxxxx = prefs.getLong(Judul, 0);
+        return xxxxxx;
+    }
+
+    public void SaveFloat(String Judul, Float bbb){
+        SharedPreferences.Editor edit = prefs.edit();
+        edit.putFloat(Judul, bbb);
+        edit.apply();
+    }
+    public Float GetFloat(String Judul){
+        Float xxxxxx = prefs.getFloat(Judul, 0);
+        return xxxxxx;
+    }
+
+        ////////////////////////////////////
+}
