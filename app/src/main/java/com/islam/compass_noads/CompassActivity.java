@@ -266,9 +266,9 @@ public class CompassActivity extends AppCompatActivity {
                 // Toast.makeText(getApplicationContext(), "Location not ready, Please Restart Application", Toast.LENGTH_LONG).show();
             }else{
                 item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_on));
-                double longitude2 = 39.826206;
+                double longitude2 = 39.826206; // ka'bah Position https://www.latlong.net/place/kaaba-mecca-saudi-arabia-12639.html
                 double longitude1 = lon_saya;
-                double latitude2 = Math.toRadians(21.422487);
+                double latitude2 = Math.toRadians(21.422487); // ka'bah Position https://www.latlong.net/place/kaaba-mecca-saudi-arabia-12639.html
                 double latitude1 = Math.toRadians(lat_saya);
                 double longDiff= Math.toRadians(longitude2-longitude1);
                 double y= Math.sin(longDiff)*Math.cos(latitude2);
