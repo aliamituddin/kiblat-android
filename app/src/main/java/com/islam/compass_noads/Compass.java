@@ -1,4 +1,4 @@
-package com.sevencrayons.compass;
+package com.islam.compass_noads;
 
 import android.content.Context;
 import android.hardware.Sensor;

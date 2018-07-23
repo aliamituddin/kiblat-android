@@ -1,23 +1,19 @@
-package com.sevencrayons.compass;
+package com.islam.compass_noads;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.location.Criteria;
-import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.PowerManager;
-import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.animation.Animation;
@@ -25,6 +21,7 @@ import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 
 import static android.view.View.INVISIBLE;
 
@@ -37,6 +34,8 @@ public class CompassActivity extends AppCompatActivity {
     private ImageView imageDial;
     private TextView text_atas;
     private TextView text_bawah;
+    public Menu menu;
+    public MenuItem item;
     private float currentAzimuth;
     SharedPreferences prefs;
     public LocationManager locationManager;
@@ -47,6 +46,7 @@ public class CompassActivity extends AppCompatActivity {
         setContentView(R.layout.activity_compass);
         //////////////////////////////////////////
 
+    //////////////////////////////////////////
         prefs = getSharedPreferences("", MODE_PRIVATE);
         gps = new GPSTracker(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -137,7 +137,6 @@ public class CompassActivity extends AppCompatActivity {
 
     @SuppressLint("MissingPermission")
     public void getBearing(){
-        double result = 0;
         // Get the location manager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ActivityCompat.requestPermissions(this,
@@ -148,57 +147,11 @@ public class CompassActivity extends AppCompatActivity {
         if(kiblat_derajat > 0.0001){
             text_bawah.setText("Lokasi anda: menggunakan lokasi terakhir ");
             text_atas.setText("Arah Ka'bah: " + kiblat_derajat + " derajat dari utara");
-
+           // MenuItem item = menu.findItem(R.id.gps);
+          //   item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_off));
         }else
-        if(gps.canGetLocation()){
-            double latitude = gps.getLatitude();
-            double longitude = gps.getLongitude();
-            // \n is for new line
-            text_bawah.setText("Lokasi anda: \nLatitude: " + latitude + " Longitude: " + longitude);
-           // Toast.makeText(getApplicationContext(), "Lokasi anda: - \nLat: " + latitude + "\nLong: " + longitude, Toast.LENGTH_LONG).show();
-            Log.e("TAG", "GPS is on");
-            double lat_saya = gps.getLatitude ();
-            double lon_saya = gps.getLongitude ();
-
-            if(lat_saya < 0.001 && lon_saya < 0.001) {
-                // arrowViewQiblat.isShown(false);
-                arrowViewQiblat .setVisibility(INVISIBLE);
-                arrowViewQiblat .setVisibility(View.GONE);
-                text_atas.setText("Location not ready, Please Restart Application");
-                text_bawah.setText("Location not ready, Please Restart Application");
-               // Toast.makeText(getApplicationContext(), "Location not ready, Please Restart Application", Toast.LENGTH_LONG).show();
-            }else{
-                double longitude2 = 39.826206;
-                double longitude1 = lon_saya;
-                double latitude2 = Math.toRadians(21.422487);
-                double latitude1 = Math.toRadians(lat_saya);
-
-
-                double longDiff= Math.toRadians(longitude2-longitude1);
-                double y= Math.sin(longDiff)*Math.cos(latitude2);
-                double x=Math.cos(latitude1)*Math.sin(latitude2)-Math.sin(latitude1)*Math.cos(latitude2)*Math.cos(longDiff);
-                result = (Math.toDegrees(Math.atan2(y, x))+360)%360;
-                float result2 = (float)result;
-                SaveFloat("kiblat_derajat", result2);
-                text_atas.setText("Arah Ka'bah: " + result2 + " derajat dari utara");
-
-                Toast.makeText(getApplicationContext(), "Arah Ka'bah: " + result2 + " derajat dari utara", Toast.LENGTH_LONG).show();
-            }
-
-            //  Toast.makeText(getApplicationContext(), "lat_saya: "+lat_saya + "\nlon_saya: "+lon_saya, Toast.LENGTH_LONG).show();
-
-        }else{
-            // can't get location
-            // GPS or Network is not enabled
-            // Ask user to enable GPS/network in settings
-            gps.showSettingsAlert();
-                // arrowViewQiblat.isShown(false);
-                arrowViewQiblat .setVisibility(INVISIBLE);
-             arrowViewQiblat .setVisibility(View.GONE);
-            text_atas.setText("Please enable Location first and Restart Application");
-            text_bawah.setText("Please enable Location first and Restart Application");
-
-           // Toast.makeText(getApplicationContext(), "Please enable Location first and Restart Application", Toast.LENGTH_LONG).show();
+        {
+            fetch_GPS();
         }
 
 
@@ -265,5 +218,82 @@ public class CompassActivity extends AppCompatActivity {
         return xxxxxx;
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        // this.menu = menu;
+        // menu.getItem(0). setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_off));
+       // getMenuInflater().inflate(R.menu.gps, menu);
+       // MenuItem item = menu.findItem(R.id.gps);
+        inflater.inflate(R.menu.gps, menu);
+        item = menu.findItem(R.id.gps);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle presses on the action bar items
+        switch (item.getItemId()) {
+            case R.id.gps:
+                //logout code
+                fetch_GPS();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    public void fetch_GPS(){
+        double result = 0;
+        gps = new GPSTracker(this);
+        if(gps.canGetLocation()){
+            double latitude = gps.getLatitude();
+            double longitude = gps.getLongitude();
+            // \n is for new line
+            text_bawah.setText("Lokasi anda: \nLatitude: " + latitude + " Longitude: " + longitude);
+            // Toast.makeText(getApplicationContext(), "Lokasi anda: - \nLat: " + latitude + "\nLong: " + longitude, Toast.LENGTH_LONG).show();
+            Log.e("TAG", "GPS is on");
+            double lat_saya = gps.getLatitude ();
+            double lon_saya = gps.getLongitude ();
+            if(lat_saya < 0.001 && lon_saya < 0.001) {
+                // arrowViewQiblat.isShown(false);
+                arrowViewQiblat .setVisibility(INVISIBLE);
+                arrowViewQiblat .setVisibility(View.GONE);
+                text_atas.setText("Location not ready, try again");
+                text_bawah.setText("Location not ready, try again");
+
+                item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_off));
+                // Toast.makeText(getApplicationContext(), "Location not ready, Please Restart Application", Toast.LENGTH_LONG).show();
+            }else{
+                item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_on));
+                double longitude2 = 39.826206;
+                double longitude1 = lon_saya;
+                double latitude2 = Math.toRadians(21.422487);
+                double latitude1 = Math.toRadians(lat_saya);
+                double longDiff= Math.toRadians(longitude2-longitude1);
+                double y= Math.sin(longDiff)*Math.cos(latitude2);
+                double x=Math.cos(latitude1)*Math.sin(latitude2)-Math.sin(latitude1)*Math.cos(latitude2)*Math.cos(longDiff);
+                result = (Math.toDegrees(Math.atan2(y, x))+360)%360;
+                float result2 = (float)result;
+                SaveFloat("kiblat_derajat", result2);
+                text_atas.setText("Arah Ka'bah: " + result2 + " derajat dari utara");
+                Toast.makeText(getApplicationContext(), "Arah Ka'bah: " + result2 + " derajat dari utara", Toast.LENGTH_LONG).show();
+            }
+            //  Toast.makeText(getApplicationContext(), "lat_saya: "+lat_saya + "\nlon_saya: "+lon_saya, Toast.LENGTH_LONG).show();
+        }else{
+            // can't get location
+            // GPS or Network is not enabled
+            // Ask user to enable GPS/network in settings
+            gps.showSettingsAlert();
+
+            // arrowViewQiblat.isShown(false);
+            arrowViewQiblat .setVisibility(INVISIBLE);
+            arrowViewQiblat .setVisibility(View.GONE);
+            text_atas.setText("Please enable Location first");
+            text_bawah.setText("Please enable Location first");
+            item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_off));
+            // Toast.makeText(getApplicationContext(), "Please enable Location first and Restart Application", Toast.LENGTH_LONG).show();
+        }
+    }
         ////////////////////////////////////
 }
