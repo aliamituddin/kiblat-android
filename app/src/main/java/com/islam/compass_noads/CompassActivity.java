@@ -59,42 +59,63 @@ public class CompassActivity extends AppCompatActivity {
         //////////////////////////////////////////
 
         setupCompass();
+
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         Log.d(TAG, "start compass");
-        compass.start();
-        //alwaysOn(1);
+        if(compass != null) {
+            compass.start();
+        }
 
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        compass.stop();
-
+        if(compass != null) {
+            compass.stop();
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        compass.start();
+        if(compass != null) {
+            compass.start();
+        }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         Log.d(TAG, "stop compass");
-        compass.stop();
+        if(compass != null) {
+            compass.stop();
+        }
 
 
 
     }
 
     private void setupCompass() {
-        getBearing();
+        Boolean permission_granted = GetBoolean("permission_granted");
+        if(permission_granted) {
+            getBearing();
+        }else{
+            text_atas.setText("Location not available, Press the GPS button");
+            text_bawah.setText("Location not available, Press the GPS button");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                        1);
+            }
+        }
+
+
+
         compass = new Compass(this);
         Compass.CompassListener cl = new Compass.CompassListener() {
 
@@ -169,6 +190,9 @@ public class CompassActivity extends AppCompatActivity {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission was granted, yay! Do the
+                    SaveBoolean("permission_granted", true);
+
+
                 } else {
 
                     Toast.makeText(getApplicationContext(), "This app requires Access Location", Toast.LENGTH_LONG).show();
@@ -197,7 +221,10 @@ public class CompassActivity extends AppCompatActivity {
         edit.putBoolean(Judul, bbb);
         edit.apply();
     }
-
+    public Boolean GetBoolean(String Judul){
+        Boolean result = prefs.getBoolean(Judul, false);
+        return result;
+    }
     public  void Savelong(String Judul, Long bbb){
         SharedPreferences.Editor edit = prefs.edit();
         edit.putLong(Judul, bbb);
@@ -244,6 +271,9 @@ public class CompassActivity extends AppCompatActivity {
     }
 
     public void fetch_GPS(){
+
+
+
         double result = 0;
         gps = new GPSTracker(this);
         if(gps.canGetLocation()){
