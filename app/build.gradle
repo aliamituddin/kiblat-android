@@ -8,8 +8,8 @@ android {
         applicationId "com.islam.compass_noads"
         minSdkVersion 16
         targetSdkVersion 27
-        versionCode 201804121
-        versionName "1.0.4"
+        versionCode 201807242
+        versionName "1.0.4.2"
     }
     buildTypes {
         release {

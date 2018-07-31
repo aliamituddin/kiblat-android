@@ -57,6 +57,8 @@ public class CompassActivity extends AppCompatActivity {
         text_bawah = (TextView) findViewById(R.id.teks_bawah);
 
         //////////////////////////////////////////
+        arrowViewQiblat .setVisibility(INVISIBLE);
+        arrowViewQiblat .setVisibility(View.GONE);
 
         setupCompass();
 
@@ -105,8 +107,8 @@ public class CompassActivity extends AppCompatActivity {
         if(permission_granted) {
             getBearing();
         }else{
-            text_atas.setText("Location not available, Press the GPS button");
-            text_bawah.setText("Location not available, Press the GPS button");
+            text_atas.setText(getResources().getString(R.string.msg_permission_not_granted_yet));
+            text_bawah.setText(getResources().getString(R.string.msg_permission_not_granted_yet));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
@@ -154,22 +156,27 @@ public class CompassActivity extends AppCompatActivity {
         an.setRepeatCount(0);
         an.setFillAfter(true);
         arrowViewQiblat.startAnimation(an);
+        if(kiblat_derajat > 0){
+            arrowViewQiblat .setVisibility(View.VISIBLE);
+        }else{
+            arrowViewQiblat .setVisibility(INVISIBLE);
+            arrowViewQiblat .setVisibility(View.GONE);
+        }
     }
 
     @SuppressLint("MissingPermission")
     public void getBearing(){
         // Get the location manager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                    1);
-        }
+
         float kiblat_derajat = GetFloat("kiblat_derajat");
         if(kiblat_derajat > 0.0001){
-            text_bawah.setText("Lokasi anda: menggunakan lokasi terakhir ");
-            text_atas.setText("Arah Ka'bah: " + kiblat_derajat + " derajat dari utara");
+            text_bawah.setText(getResources().getString(R.string.your_location) +" "+ getResources().getString(R.string.using_last_location));
+            text_atas.setText(getResources().getString(R.string.qibla_direction) +" " + kiblat_derajat + " " + getResources().getString(R.string.degree_from_north));
            // MenuItem item = menu.findItem(R.id.gps);
-          //   item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_off));
+            if(item != null) {
+                item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_off));
+            }
+                arrowViewQiblat .setVisibility(View.VISIBLE);
         }else
         {
             fetch_GPS();
@@ -191,11 +198,14 @@ public class CompassActivity extends AppCompatActivity {
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission was granted, yay! Do the
                     SaveBoolean("permission_granted", true);
-
+                    text_atas.setText(getResources().getString(R.string.msg_permission_granted));
+                    text_bawah.setText(getResources().getString(R.string.msg_permission_granted));
+                    arrowViewQiblat .setVisibility(INVISIBLE);
+                    arrowViewQiblat .setVisibility(View.GONE);
 
                 } else {
 
-                    Toast.makeText(getApplicationContext(), "This app requires Access Location", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(), getResources().getString(R.string.toast_permission_required), Toast.LENGTH_LONG).show();
                     finish();
                 }
                 return;
@@ -280,7 +290,7 @@ public class CompassActivity extends AppCompatActivity {
             double latitude = gps.getLatitude();
             double longitude = gps.getLongitude();
             // \n is for new line
-            text_bawah.setText("Lokasi anda: \nLatitude: " + latitude + " Longitude: " + longitude);
+            text_bawah.setText(getResources().getString(R.string.your_location) + "\nLat: " + latitude + " Long: " + longitude);
             // Toast.makeText(getApplicationContext(), "Lokasi anda: - \nLat: " + latitude + "\nLong: " + longitude, Toast.LENGTH_LONG).show();
             Log.e("TAG", "GPS is on");
             double lat_saya = gps.getLatitude ();
@@ -289,13 +299,16 @@ public class CompassActivity extends AppCompatActivity {
                 // arrowViewQiblat.isShown(false);
                 arrowViewQiblat .setVisibility(INVISIBLE);
                 arrowViewQiblat .setVisibility(View.GONE);
-                text_atas.setText("Location not ready, try again");
-                text_bawah.setText("Location not ready, try again");
-
-                item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_off));
+                text_atas.setText(getResources().getString(R.string.location_not_ready));
+                text_bawah.setText(getResources().getString(R.string.location_not_ready));
+                if(item != null) {
+                    item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_off));
+                }
                 // Toast.makeText(getApplicationContext(), "Location not ready, Please Restart Application", Toast.LENGTH_LONG).show();
             }else{
-                item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_on));
+                if(item != null) {
+                    item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_on));
+                }
                 double longitude2 = 39.826206; // ka'bah Position https://www.latlong.net/place/kaaba-mecca-saudi-arabia-12639.html
                 double longitude1 = lon_saya;
                 double latitude2 = Math.toRadians(21.422487); // ka'bah Position https://www.latlong.net/place/kaaba-mecca-saudi-arabia-12639.html
@@ -306,8 +319,10 @@ public class CompassActivity extends AppCompatActivity {
                 result = (Math.toDegrees(Math.atan2(y, x))+360)%360;
                 float result2 = (float)result;
                 SaveFloat("kiblat_derajat", result2);
-                text_atas.setText("Arah Ka'bah: " + result2 + " derajat dari utara");
-                Toast.makeText(getApplicationContext(), "Arah Ka'bah: " + result2 + " derajat dari utara", Toast.LENGTH_LONG).show();
+                text_atas.setText(getResources().getString(R.string.qibla_direction) +" "+ result2 + " "+ getResources().getString(R.string.degree_from_north));
+                Toast.makeText(getApplicationContext(), getResources().getString(R.string.qibla_direction) + " " + result2 + " "+ getResources().getString(R.string.degree_from_north), Toast.LENGTH_LONG).show();
+                arrowViewQiblat .setVisibility(View.VISIBLE);
+
             }
             //  Toast.makeText(getApplicationContext(), "lat_saya: "+lat_saya + "\nlon_saya: "+lon_saya, Toast.LENGTH_LONG).show();
         }else{
@@ -319,9 +334,12 @@ public class CompassActivity extends AppCompatActivity {
             // arrowViewQiblat.isShown(false);
             arrowViewQiblat .setVisibility(INVISIBLE);
             arrowViewQiblat .setVisibility(View.GONE);
-            text_atas.setText("Please enable Location first");
-            text_bawah.setText("Please enable Location first");
-            item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_off));
+            text_atas.setText(getResources().getString(R.string.pls_enable_location));
+            text_bawah.setText(getResources().getString(R.string.pls_enable_location));
+            if(item != null){
+                item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.gps_off));
+
+            }
             // Toast.makeText(getApplicationContext(), "Please enable Location first and Restart Application", Toast.LENGTH_LONG).show();
         }
     }
