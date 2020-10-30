@@ -1,4 +1,4 @@
-This code is based on https://github.com/iutinvg/compass/
+This code is based from https://github.com/iutinvg/compass/
 
 
 # APK:
